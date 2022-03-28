@@ -67,6 +67,10 @@ static const char *scsi_model (int device) {
   }
 }
 
+static const char *scsi_serial (int device) {
+  return strdup(_("unknown"));
+}
+
 static enum e_gettemp scsi_get_temperature(struct disk *dsk) {
   int              i;
   int              tempPage = 0;
@@ -148,5 +152,6 @@ struct bustype scsi_bus = {
   "SCSI",
   scsi_probe,
   scsi_model,
-  scsi_get_temperature
+  scsi_get_temperature,
+  scsi_serial
 };

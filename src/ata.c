@@ -68,6 +68,10 @@ static const char *ata_model (int device) {
     return strdup((char*) ((u16*)sbuff + 27));
 }
 
+static const char *ata_serial (int device) {
+  return strdup(_("unknown"));
+}
+
 
 static enum e_gettemp ata_get_temperature(struct disk *dsk) {   
   unsigned char    values[512]/*, thresholds[512]*/;
@@ -166,5 +170,6 @@ struct bustype ata_bus = {
   "PATA",
   ata_probe,
   ata_model,
-  ata_get_temperature
+  ata_get_temperature,
+  ata_serial
 };

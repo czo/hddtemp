@@ -94,6 +94,18 @@ static const char *sata_model (int device) {
   }
 }
 
+static const char *sata_serial (int device) {
+  unsigned char cmd[4] = { WIN_IDENTIFY, 0, 0, 1 };
+  unsigned char identify[512];
+
+  if(device == -1 || sata_pass_thru(device, cmd, identify))
+    return strdup(_("unknown"));
+  else
+  {
+    sata_fixstring(identify + 20, 20);
+    return strdup((char*)(identify + 20));
+  }
+}
 static void sata_print_fields(const unsigned char* smart_data) {
   int i, n;
 
@@ -202,5 +214,6 @@ struct bustype sata_bus = {
   "SATA",
   sata_probe,
   sata_model,
-  sata_get_temperature
+  sata_get_temperature,
+  sata_serial
 };

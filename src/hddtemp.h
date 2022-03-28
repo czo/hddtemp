@@ -58,6 +58,7 @@ struct disk {
   int                      fd;
   const char *             drive;
   const char *             model;
+  const char *             serial;
   enum e_bustype           type;
   int                      value;
   struct harddrive_entry * db_entry;
@@ -72,12 +73,13 @@ struct bustype {
   int (*probe)(int);
   const char *(*model)(int);
   enum e_gettemp (*get_temperature)(struct disk *);
+  const char *(*serial)(int);
 };
 
 
 extern struct bustype *   bus[BUS_TYPE_MAX];
 extern char               errormsg[MAX_ERRORMSG_SIZE];
-extern int                tcp_daemon, debug, quiet, wakeup, af_hint, foreground;
+extern int                tcp_daemon, debug, quiet, wakeup, af_hint, foreground, with_serial;
 extern char               separator;
 extern long               portnum, syslog_interval;
 extern char *             listen_addr;

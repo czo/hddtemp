@@ -166,39 +166,81 @@ void daemon_send_msg(struct disk *ldisks, int cfd) {
 
     switch(dsk->ret) {
     case GETTEMP_NOT_APPLICABLE:
-      n = snprintf(msg, sizeof(msg), "%s%c%s%cNA%c*",
+      if (with_serial)
+        n = snprintf(msg, sizeof(msg), "%s%c%s%cNA%c*%c%s",
+                   dsk->drive, separator,
+                   dsk->model, separator,
+                   separator, separator, 
+                   dsk->serial);
+      else
+        n = snprintf(msg, sizeof(msg), "%s%c%s%cNA%c*",
                    dsk->drive, separator,
                    dsk->model, separator,
                    separator);
       break;
     case GETTEMP_UNKNOWN:
-      n = snprintf(msg, sizeof(msg), "%s%c%s%cUNK%c*",
+      if (with_serial)
+        n = snprintf(msg, sizeof(msg), "%s%c%s%cUNK%c*%c%s",
+                   dsk->drive, separator,
+                   dsk->model, separator, 
+                   separator, separator, 
+                   dsk->serial);
+      else
+        n = snprintf(msg, sizeof(msg), "%s%c%s%cUNK%c*",
                    dsk->drive, separator,
                    dsk->model, separator, 
                    separator);
       break;
     case GETTEMP_KNOWN:
-      n = snprintf(msg, sizeof(msg), "%s%c%s%c%d%c%c",
+      if (with_serial)
+        n = snprintf(msg, sizeof(msg), "%s%c%s%c%d%c%c%c%s",
+                   dsk->drive,          separator,
+                   dsk->model,          separator,
+                   value_to_unit(dsk),  separator,
+                   get_unit(dsk), separator,
+                   dsk->serial);
+      else
+        n = snprintf(msg, sizeof(msg), "%s%c%s%c%d%c%c",
                    dsk->drive,          separator,
                    dsk->model,          separator,
                    value_to_unit(dsk),  separator,
                    get_unit(dsk));
       break;
     case GETTEMP_NOSENSOR:
-      n = snprintf(msg, sizeof(msg), "%s%c%s%cNOS%c*",
+      if (with_serial)
+        n = snprintf(msg, sizeof(msg), "%s%c%s%cNOS%c*%c%s",
+                   dsk->drive, separator,
+                   dsk->model, separator,
+                   separator, separator,
+                   dsk->serial);
+      else
+        n = snprintf(msg, sizeof(msg), "%s%c%s%cNOS%c*",
                    dsk->drive, separator,
                    dsk->model, separator,
                    separator);
       break;
     case GETTEMP_DRIVE_SLEEP:
-      n = snprintf(msg, sizeof(msg), "%s%c%s%cSLP%c*",
+      if (with_serial)
+        n = snprintf(msg, sizeof(msg), "%s%c%s%cSLP%c*%c%s",
+                   dsk->drive, separator,
+                   dsk->model, separator,
+                   separator, separator,
+                   dsk->serial);
+      else
+        n = snprintf(msg, sizeof(msg), "%s%c%s%cSLP%c*",
                    dsk->drive, separator,
                    dsk->model, separator,
                    separator);
       break;
     case GETTEMP_ERROR:
     default:
-      n = snprintf(msg, sizeof(msg), "%s%c%s%cERR%c*",
+      if (with_serial)
+        n = snprintf(msg, sizeof(msg), "%s%c%s%cERR%c*%c%s",
+                   dsk->drive,                        separator,
+                   (dsk->model) ? dsk->model : "???", separator,
+                   separator, separator, (dsk->serial) ? dsk->serial : "???");
+      else
+        n = snprintf(msg, sizeof(msg), "%s%c%s%cERR%c*",
                    dsk->drive,                        separator,
                    (dsk->model) ? dsk->model : "???", separator,
                    separator);

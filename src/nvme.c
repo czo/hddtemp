@@ -30,6 +30,14 @@
 #include <string.h>
 #include <stdio.h>
 
+// Gettext includes
+#if ENABLE_NLS
+#include <libintl.h>
+#define _(String) gettext (String)
+#else
+#define _(String) (String)
+#endif
+
 
 struct nvme_smart_log {
   unsigned char  critical_warning;
@@ -216,6 +224,10 @@ const char *nvme_model(int fd)
   return p;
 }
 
+const char *nvme_serial(int fd) {
+  return strdup(_("unknown"));
+}
+
 enum e_gettemp nvme_get_temperature(struct disk *disk)
 {
   struct nvme_smart_log smart_log;
@@ -229,6 +241,7 @@ struct bustype nvme_bus = {
   "NVME",
   nvme_probe,
   nvme_model,
-  nvme_get_temperature
+  nvme_get_temperature,
+  nvme_serial
 };
 #endif

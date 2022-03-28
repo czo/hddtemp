@@ -77,7 +77,7 @@ char *             listen_addr;
 char               separator = SEPARATOR;
 
 struct bustype *   bus[BUS_TYPE_MAX];
-int                tcp_daemon, debug, quiet, numeric, wakeup, foreground, af_hint;
+int                tcp_daemon, debug, quiet, numeric, wakeup, foreground, af_hint, with_serial;
 
 static enum { DEFAULT, CELSIUS, FAHRENHEIT } unit;
 
@@ -163,7 +163,7 @@ static void display_temperature(struct disk *dsk) {
 
   if(dsk->type != ERROR && debug ) {
     printf(_("\n================= hddtemp %s ==================\n"
-           "Model: %s\n\n"), VERSION, dsk->model);
+           "Model: %s(%s)\n\n"), VERSION, dsk->model, dsk->serial);
     /*    return;*/
   }
 
@@ -188,7 +188,10 @@ static void display_temperature(struct disk *dsk) {
     if (numeric && quiet)
       printf("0\n");
     else
-      printf("%s: %s: %s\n", dsk->drive, dsk->model, dsk->errormsg);
+      if ( with_serial )
+        printf("%s: %s(%s): %s\n", dsk->drive, dsk->model, dsk->serial, dsk->errormsg);
+      else
+        printf("%s: %s: %s\n", dsk->drive, dsk->model, dsk->errormsg);
 
     break;
   case GETTEMP_UNKNOWN:
@@ -203,13 +206,26 @@ static void display_temperature(struct disk *dsk) {
     if (numeric && quiet)
       printf("0\n");
     else
-      fprintf(stderr, _("%s: %s:  no sensor\n"), dsk->drive, dsk->model);
+      if ( with_serial )
+        fprintf(stderr, _("%s: %s(%s):  no sensor\n"), dsk->drive, dsk->model, dsk->serial);
+      else
+        fprintf(stderr, _("%s: %s:  no sensor\n"), dsk->drive, dsk->model);
 
     break;
   case GETTEMP_KNOWN:
 
     if (! numeric)
-       printf("%s: %s: %d%s%c\n",
+       if ( with_serial )
+         printf("%s: %s(%s): %d%s%c\n",
+              dsk->drive,
+              dsk->model,
+              dsk->serial,
+              value_to_unit(dsk),
+              degree,
+              get_unit(dsk)
+             );
+       else
+         printf("%s: %s: %d%s%c\n",
               dsk->drive,
               dsk->model,
               value_to_unit(dsk),
@@ -225,14 +241,20 @@ static void display_temperature(struct disk *dsk) {
     if (numeric && quiet)
       printf("0\n");
     else
-      fprintf(stderr, _("%s: %s: drive is sleeping\n"), dsk->drive, dsk->model);
+      if (with_serial)
+        fprintf(stderr, _("%s: %s(%s): drive is sleeping\n"), dsk->drive, dsk->model, dsk->serial);
+      else
+        fprintf(stderr, _("%s: %s: drive is sleeping\n"), dsk->drive, dsk->model);
 
     break;
   case GETTEMP_NOSENSOR:
     if (numeric && quiet)
       printf("0\n");
     else
-      fprintf(stderr, _("%s: %s:  drive supported, but it doesn't have a temperature sensor.\n"), dsk->drive, dsk->model);
+      if ( with_serial )
+        fprintf(stderr, _("%s: %s(%s):  drive supported, but it doesn't have a temperature sensor.\n"), dsk->drive, dsk->model, dsk->serial);
+      else
+        fprintf(stderr, _("%s: %s:  drive supported, but it doesn't have a temperature sensor.\n"), dsk->drive, dsk->model);
 
     break;
   default:
@@ -274,7 +296,7 @@ int main(int argc, char* argv[]) {
   bindtextdomain (PACKAGE, LOCALEDIR);
   textdomain (PACKAGE);
 
-  show_db = debug = numeric = quiet = wakeup = af_hint = syslog_interval = foreground = 0;
+  show_db = debug = numeric = quiet = wakeup = af_hint = syslog_interval = foreground, with_serial = 0;
   unit = DEFAULT;
   portnum = PORT_NUMBER;
   listen_addr = NULL;
@@ -293,6 +315,7 @@ int main(int argc, char* argv[]) {
       {"listen",     1, NULL, 'l'},
       {"version",    0, NULL, 'v'},
       {"port",       1, NULL, 'p'},
+      {"serial",     0, NULL, 'r'},
       {"separator",  1, NULL, 's'},
       {"numeric",    0, NULL, 'n'},
       {"unit",       1, NULL, 'u'},
@@ -301,7 +324,7 @@ int main(int argc, char* argv[]) {
       {0, 0, 0, 0}
     };
 
-    c = getopt_long (argc, argv, "bDdf:l:hp:qs:u:vnw46FS:", long_options, &lindex);
+    c = getopt_long (argc, argv, "bDdf:l:hp:qs:u:vnwr46FS:", long_options, &lindex);
     if (c == -1)
       break;
 
@@ -382,6 +405,7 @@ int main(int argc, char* argv[]) {
 		 "  -l   --listen=addr :  listen on a specific interface (in TCP/IP daemon mode).\n"
                  "  -n   --numeric     :  print only the temperature.\n"
 		 "  -p   --port=#      :  port to listen to (in TCP/IP daemon mode).\n"
+		 "  -r   --serial      :  print serial numbers too.\n"
 		 "  -s   --separator=C :  separator to use between fields (in TCP/IP daemon mode).\n"
 		 "  -S   --syslog=s    :  log temperature to syslog every s seconds.\n"
                  "  -u   --unit=[C|F]  :  force output temperature either in Celsius or Fahrenheit.\n"
@@ -404,6 +428,9 @@ int main(int argc, char* argv[]) {
         break;
       case 'w':
         wakeup = 1;
+        break;
+      case 'r':
+        with_serial = 1;
         break;
       case 'S':
         {
@@ -522,6 +549,7 @@ int main(int argc, char* argv[]) {
     }
 
     dsk->model = bus[dsk->type]->model(dsk->fd);
+    dsk->serial = bus[dsk->type]->serial(dsk->fd);
     dsk->value = -1;
     if(dsk->type != BUS_SCSI) {
       struct harddrive_entry   *dbe;
